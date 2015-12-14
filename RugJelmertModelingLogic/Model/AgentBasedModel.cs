@@ -40,6 +40,7 @@ namespace RugJelmertModelingLogic.Model
             for (int i = 0; i < iterations; i++)
             {
                 this.RunIteration();
+
             }
         }
 
@@ -99,10 +100,12 @@ namespace RugJelmertModelingLogic.Model
                         iA.adjust_opinion(k, (iA.flex(k) + (size_correction * sum_part)));                        
                     }
 
-                this.IterationCount++;
 
-                this.calculateMeasures();
             }
+
+
+            this.calculateMeasures();
+            this.IterationCount++;
         }
 
 
@@ -140,7 +143,7 @@ namespace RugJelmertModelingLogic.Model
     }
 
     /// <summary>
-    /// Found at http://stackoverflow.com/questions/273313/randomize-a-listt-in-c-sharp
+    /// http://stackoverflow.com/questions/273313/randomize-a-listt-in-c-sharp
     /// </summary>
     static class MyExtensions
     {

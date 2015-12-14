@@ -30,6 +30,11 @@ namespace RugJelmertModelingLogic.Model.Measurements
             return diversity;
         }
 
+        public double getItem(int index)
+        {
+            return this.diversity[index];
+        }
+
         public List<Double> getResult()
         {
             return this.diversity;

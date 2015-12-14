@@ -3,9 +3,6 @@ using RugJelmertModelingLogic.Model;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RugJelmertModelingCLI
 {
@@ -37,7 +34,7 @@ namespace RugJelmertModelingCLI
 
                         foreach (var a in agents)
                         {
-                            abm.grid.push(a);
+                            abm.addAgent(a);
                         }
                     }
                         
@@ -50,6 +47,7 @@ namespace RugJelmertModelingCLI
         int cells = 0;
         int agents = 0;     
         int immigrants = 0;
+
         /// <summary>
         /// Initialize the agents for this input string
         /// x;y;immigrants;addresses;households

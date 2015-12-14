@@ -70,5 +70,10 @@ namespace RugJelmertModelingLogic.Model.Measurements
         {
             return this.polarization;
         }
+
+        public double getItem(int index)
+        {
+            return this.polarization[index];
+        }
     }
 }

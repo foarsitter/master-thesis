@@ -11,5 +11,7 @@ namespace RugJelmertModelingLogic.Model.Measurements
     {
         List<double> getResult();
         double calculate(Agent[] agents);
+
+        double getItem(int index);
     }
 }

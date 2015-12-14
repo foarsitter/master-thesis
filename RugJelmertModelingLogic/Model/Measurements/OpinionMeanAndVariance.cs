@@ -46,7 +46,18 @@ namespace RugJelmertModelingLogic.Model.Measurements
 
         public List<double> getResult()
         {
-            throw new NotImplementedException();
+            return mean;
+        }
+
+
+        public double getItem(int index)
+        {
+            return this.mean[index];
+        }
+
+        public List<double> getVariance()
+        {
+            return variance;
         }
     }
 }
