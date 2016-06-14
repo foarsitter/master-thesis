@@ -3,10 +3,15 @@ using RugJelmertModelingLogic;
 using RugJelmertModelingLogic.Model;
 using RugJelmertModelingLogic.Model.Measurements;
 using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
 
@@ -15,196 +20,229 @@ namespace RugJelmertModelingCLI
 {
     class Program
     {
-
-        static Stopwatch time10kOperations = Stopwatch.StartNew();
+        static string output_dir = "";
 
         [STAThread]
         static void Main(string[] args)
-        {            
-            AgentBasedModel abm = new AgentBasedModel();
-            Agent.numFlex = 1;
+        {
+            Properties.Settings config = RugJelmertModelingCLI.Properties.Settings.Default;
+
+            Agent.numFlex = config.nFlexibleArguments;
+            Agent.numFix = config.nFixexArguments;
+
+            int nIterations = config.nIterations;
+            int nRuns = config.nRuns;
+            //int nThreads = config.nThreads;
+
+            string city = args[0].Length > 0 ? args[0] : "groningen";
+            string inputFile = "assets/" + city + ".output.v2.csv";
+
+            Console.WriteLine("Master Thesis Model by Jelmer Draaijer!");
+            Console.WriteLine(string.Format("Selected file: {0}", inputFile));
+            Console.WriteLine(string.Format("Running  {0} runs and {1} iterations", nRuns, nIterations));
+
+            output_dir = config.outputDirectory + Path.DirectorySeparatorChar + "RugJelmertModelingOutput";
+            output_dir += Path.DirectorySeparatorChar + city;
+            output_dir += Path.DirectorySeparatorChar + DateTime.Now.ToString("yyyy-MM-dd");
+            //output_dir += Path.DirectorySeparatorChar + string.Format("r{0}_i{1}", nRuns, nIterations);
+
+            Console.WriteLine("Output: " + output_dir);
+
+            Directory.CreateDirectory(output_dir);
+
+            string fileContents = File.ReadAllText(inputFile);
+
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
             
-            OpenFileDialog ofd = new OpenFileDialog();
-
-            DialogResult result = ofd.ShowDialog();
-
-            if(result == DialogResult.OK)
+            for (var run = 0; run < nRuns; run++)
             {
-                Console.WriteLine(string.Format("Loading file: {0}", ofd.FileName));
+                //random id for this run. 
+                string modelId = Guid.NewGuid().ToString("D").Substring(0, 8);
 
-                initialize(ofd.FileName, abm);
-                initMeasurements(abm);
+                string modelPath = output_dir + Path.DirectorySeparatorChar
+                        + modelId + Path.DirectorySeparatorChar;
 
-                System.Threading.Timer t = new System.Threading.Timer(TimerCallback, null, 0, 1000);
+                Directory.CreateDirectory(modelPath + "grid-dumps" + Path.DirectorySeparatorChar);
 
-                Thread runThreat = new Thread(delegate() {
-                    Console.WriteLine("Start...");
+                ABMInitializer loader = new ABMInitializer();
 
-                    for (int i = 0; i < 100; i++)
+                AgentBasedModel abm = loader.LoadCSVFile(fileContents);
+                abm.calcaluteMeasurementsEachN = nIterations / 100;
+
+                OpinionMeanAndVariance opinionMeanAndVariance = new OpinionMeanAndVariance(abm.Agents.ToArray());
+                ExtremeCount ExtremeCountMeasurement = new ExtremeCount(abm);
+                OpinionDiversity opinionDiversity = new OpinionDiversity(abm.Agents.ToArray());
+
+                CellAVGDistance dist = new CellAVGDistance(abm.grid);
+
+                OpinionPolarisation opinionPolarisation = new OpinionPolarisation(abm.Agents.OrderBy(item => abm.Random.Next()).ToArray());
+                OpinionPolarisation localsPolarisation = new OpinionPolarisation(abm.Locals.OrderBy(item => abm.Random.Next()).ToArray());
+                OpinionPolarisation immigrantsPolarsation = new OpinionPolarisation(abm.Immigrants.OrderBy(item => abm.Random.Next()).ToArray());
+
+                abm.clearMeasurements();
+                abm.AddMeasurement(opinionDiversity);
+
+                //for each subgroup a different measurement object
+                abm.AddMeasurement(opinionPolarisation);
+                abm.AddMeasurement(localsPolarisation);
+                abm.AddMeasurement(immigrantsPolarsation);
+                abm.AddMeasurement(dist);
+
+                abm.AddMeasurement(opinionMeanAndVariance);
+                abm.AddMeasurement(ExtremeCountMeasurement);
+
+
+                abm.ResetIterationCount();
+
+                for (int i = 0; i < nIterations; i++)
+                {
+                    abm.RunIteration();
+
+                    // eerste niet, laatste wel. 
+                    if (i % (nIterations / 100) == 0)
                     {
-                        abm.RunIteration();
+                        File.WriteAllText(modelPath
+                            + "grid-dumps"
+                            + Path.DirectorySeparatorChar
+                            + (i).ToString("D5") + ".grid.csv", abm.grid.Serialize());
+                    }
+                }
+
+                abm.calculateMeasures();
+
+                // write the final state
+                File.WriteAllText(modelPath
+                    + "grid-dumps"
+                    + Path.DirectorySeparatorChar
+                    + (nIterations).ToString("D5") + ".grid.csv", abm.grid.Serialize());
+
+
+                using (StringWriter csv = new StringWriter())
+                {
+                    csv.WriteLine(string.Join(";", new string[]{
+                            "Diversity",
+                            "Diversity locals",
+                            "Diversity immigrants",
+                            "Polarisation",
+                            "Polarisation locals",
+                            "Polarisation immigrants",
+                            "Extreme",
+                            "Extreme locals",
+                            "Extreme immigrants",
+                            "Mean",
+                            "Mean locals",
+                            "Mean immigrants",
+                            "Variance",
+                            "Variance locals",
+                            "Variance immigrants",
+                            "AbsMean",
+                            "AbsMean locals",
+                            "AbsMean immigrants",
+                            "AbsVariance",
+                            "AbsVariance locals",
+                            "AbsVariance immigrants", "RPBI","RPBI ABS","CellAVGDistance"}));
+
+                    for (int i = 0; i < opinionDiversity.diversityTotal.Count; i++)
+                    {
+                        var newLine = string.Join(";", new double[] {
+                                                    opinionDiversity.diversityTotal[i],
+                                                    opinionDiversity.diversityLocals[i],
+                                                    opinionDiversity.diversityImmigrants[i],
+                                                    opinionPolarisation.polarization[i],
+                                                    localsPolarisation.polarization[i],
+                                                    immigrantsPolarsation.polarization[i],
+                                                    ExtremeCountMeasurement.historyTotal[i],
+                                                    ExtremeCountMeasurement.historyLocals[i],
+                                                    ExtremeCountMeasurement.historyImmigrants[i],
+                                                    opinionMeanAndVariance.meanAll[i],
+                                                    opinionMeanAndVariance.meanLocals[i],
+                                                    opinionMeanAndVariance.meanImmigrants[i],
+                                                    opinionMeanAndVariance.varianceAll[i],
+                                                    opinionMeanAndVariance.varianceLocals[i],
+                                                    opinionMeanAndVariance.varianceImmigrants[i],
+                                                    opinionMeanAndVariance.meanAllAbs[i],
+                                                    opinionMeanAndVariance.meanLocalsAbs[i],
+                                                    opinionMeanAndVariance.meanImmigrantsAbs[i],
+                                                    opinionMeanAndVariance.varianceAllAbs[i],
+                                                    opinionMeanAndVariance.varianceLocalsAbs[i],
+                                                    opinionMeanAndVariance.varianceImmigrantsAbs[i],
+                                                    opinionMeanAndVariance.rpbi[i],
+                                                    opinionMeanAndVariance.absPpbi[i],
+                                                    dist.cellAVG[i]
+
+                            });
+
+                        csv.WriteLine(newLine);
                     }
 
+                    File.WriteAllText(modelPath + modelId + ".measures.model.csv", csv.ToString());
 
-                    handleMeasurements(abm);
-                    createEXCEL();
 
-                    t.Dispose();
-                    Console.WriteLine("");
-                    Console.WriteLine("Done...");
-                });
-
-                runThreat.Start();
+                }
+                Console.WriteLine("Finished run " + run);
             }
-            
+
+
+            watch.Stop();
+            Console.WriteLine("Time elapsed: {0:hh\\:mm\\:ss}", watch.Elapsed);
+            Console.WriteLine("Done...");
             Console.ReadLine();
         }
 
-        private static void TimerCallback(Object o)
+        public static AgentBasedModel meta(string filename)
         {
-            Console.CursorLeft -= Console.CursorLeft;
-            
-            long mili = time10kOperations.ElapsedMilliseconds;
-            long seconds = mili / 1000;
-            long minutes = seconds / 60;
+            AgentBasedModel abm = null;
 
-            TimeSpan ts = time10kOperations.Elapsed;
-                        
-            Console.Write(ts.ToString("hh\\:mm\\:ss"));           
-        } 
-            
-        public static void initialize(string filename, AgentBasedModel abm)
-        {
-            abm.grid.initEmpty(10, 10);
+            int rows = 0;
+            int colums = 0;
+            int cells = 0;
+            int agents = 0;
+            int t_immigrants = 0;
 
-            CSVParser parser = new CSVParser(abm);
-
-            parser.parse(filename);                 
-        }
-
-        static OpinionDiversity opinionDiversity = new OpinionDiversity();
-        static OpinionMeanAndVariance opinionMeanAndVariance = new OpinionMeanAndVariance();
-        static OpinionPolarisation opinionPolarisation = new OpinionPolarisation();
-
-        public static void initMeasurements(AgentBasedModel abm)
-        {
-            abm.AddMeasurement(opinionDiversity);
-            abm.AddMeasurement(opinionMeanAndVariance);
-            abm.AddMeasurement(opinionPolarisation);
-        }
-
-        public static void handleMeasurements(AgentBasedModel abm)
-        {
-            
-            //before your loop
-            var csv = new StringBuilder();
-            
-            csv.AppendLine(string.Format("{0};{1};{2}", "opinionDiversity", "opinionMeanAndVariance", "opinionPolarisation"));
-
-            for (int i = 0; i< abm.IterationCount; i++)
+            using (StreamReader reader = new StreamReader(filename))
             {
-                //in your loop              
-                var newLine = string.Format("{0};{1};{2}", opinionDiversity.getItem(i), opinionMeanAndVariance.getItem(i), opinionPolarisation.getItem(i));
-                csv.AppendLine(newLine);
+                string cvs_line;
+
+                while ((cvs_line = reader.ReadLine()) != null)
+                {
+                    if (!cvs_line.StartsWith("x"))
+                    {
+                        string[] parts = cvs_line.Split(';');
+
+                        int x = Convert.ToInt16(parts[0]);
+                        int y = Convert.ToInt16(parts[1]);
+
+                        double addresses = double.Parse(parts[3], System.Globalization.CultureInfo.InvariantCulture) / 1000;
+                        double households = double.Parse(parts[4], System.Globalization.CultureInfo.InvariantCulture);
+                        double immigrants = double.Parse(parts[2], System.Globalization.CultureInfo.InvariantCulture) / 100;
+                        double residents = addresses * households;
+
+                        if (residents > cells)
+                            cells = (int)residents + 1;
+
+                        if (x > rows)
+                            rows = x + 1;
+                        if (y > colums)
+                            colums = y + 1;
+
+                        agents += (int)residents;
+
+                        t_immigrants += (int)Math.Round(immigrants * residents);
+
+                    }
+
+                }
             }
 
-            File.WriteAllText("results.csv", csv.ToString());
-        }
+            abm = new AgentBasedModel();
 
+            // the highest row/column values +1 one is the actual array lenght, because we start at 0. 
+            abm.grid.initEmpty(rows + 2, colums + 2);
 
-        public static void createEXCEL()
-        {
-            Excel.Application xlApp;
-            Excel.Workbook xlWorkBook;
-            Excel.Worksheet xlWorkSheet;
-            object misValue = System.Reflection.Missing.Value;
+            Console.WriteLine(string.Format("Rows: {0}, Columns: {1}, Agents: {2}, Immigrants: {3}", rows, colums, agents, t_immigrants));
 
-            xlApp = new Excel.Application();
-            xlWorkBook = xlApp.Workbooks.Add(misValue);
-            xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
-
-
-            xlWorkSheet.Cells[1, 1] = "Diversity";
-            xlWorkSheet.Cells[2, 1] = "Polarisation";
-            xlWorkSheet.Cells[3, 1] = "Variance";
-            xlWorkSheet.Cells[4, 1] = "Mean";
-            Excel.Range r1 = xlWorkSheet.get_Range("B1", "CW1");
-            Excel.Range r2 = xlWorkSheet.get_Range("B2", "CW2");
-            Excel.Range r3 = xlWorkSheet.get_Range("B3", "CW3");
-            Excel.Range r4 = xlWorkSheet.get_Range("B4", "CW4");
-
-            double[] d1 = opinionDiversity.getResult().ToArray();
-            double[] d2 = opinionPolarisation.getResult().ToArray();
-            double[] d3 = opinionMeanAndVariance.getResult().ToArray();
-            double[] d4 = opinionMeanAndVariance.getVariance().ToArray();
-            r1.Value = d1;
-            r2.Value = d2;
-            r3.Value = d3;
-            r4.Value = d4;
-            
-            //xlWorkSheet.get_Range("B2", "CW2").Value = opinionMeanAndVariance.getResult().ToArray();
-            //xlWorkSheet.get_Range("B3", "CW2").Value = opinionPolarisation.getResult().ToArray();
-
-            Excel.ChartObjects xlCharts = (Excel.ChartObjects)xlWorkSheet.ChartObjects(Type.Missing);
-            Excel.ChartObject myChart = (Excel.ChartObject)xlCharts.Add(10, 80, 300, 250);
-            Excel.Chart chartPage = myChart.Chart;
-            
-            chartPage.SetSourceData(xlWorkSheet.get_Range("A1","CW1"), misValue);
-            chartPage.ChartType = Excel.XlChartType.xlLine;
-            //chartPage.Name = "Diversity";
-            
-
-            Excel.ChartObjects xlCharts2 = (Excel.ChartObjects)xlWorkSheet.ChartObjects(Type.Missing);
-            Excel.ChartObject myChart2 = (Excel.ChartObject)xlCharts.Add(350, 80, 300, 250);
-            Excel.Chart chartPage2 = myChart2.Chart;
-
-            chartPage2.SetSourceData(xlWorkSheet.get_Range("A2", "CW2"), misValue);
-            chartPage2.ChartType = Excel.XlChartType.xlLine;
-            //chartPage2.Name = "Mean";
-
-
-            Excel.ChartObjects xlCharts3 = (Excel.ChartObjects)xlWorkSheet.ChartObjects(Type.Missing);
-            Excel.ChartObject myChart3 = (Excel.ChartObject)xlCharts.Add(10, 350, 300, 250);
-            Excel.Chart chartPage3 = myChart3.Chart;
-
-            chartPage3.SetSourceData(xlWorkSheet.get_Range("A3", "CW3"), misValue);
-            chartPage3.ChartType = Excel.XlChartType.xlLine;
-            //chartPage3.Name = "Variance";
-
-
-            Excel.ChartObjects xlCharts4 = (Excel.ChartObjects)xlWorkSheet.ChartObjects(Type.Missing);
-            Excel.ChartObject myChart4 = (Excel.ChartObject)xlCharts.Add(350, 350, 300, 250);
-            Excel.Chart chartPage4 = myChart4.Chart;
-
-            chartPage4.SetSourceData(xlWorkSheet.get_Range("A4", "CW4"), misValue);
-            chartPage4.ChartType = Excel.XlChartType.xlLine;
-            //chartPage4.Name = "Polarisation";
-            xlApp.Visible = true;
-            //xlWorkBook.SaveAs("csharp.net-informations.xls", Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
-            //xlWorkBook.Close(true, misValue, misValue);
-            //xlApp.Quit();
-
-            releaseObject(xlWorkSheet);
-            releaseObject(xlWorkBook);
-            releaseObject(xlApp);
-        }
-
-        private static void releaseObject(object obj)
-        {
-            try
-            {
-                System.Runtime.InteropServices.Marshal.ReleaseComObject(obj);
-                obj = null;
-            }
-            catch (Exception ex)
-            {
-                obj = null;
-                MessageBox.Show("Exception Occured while releasing object " + ex.ToString());
-            }
-            finally
-            {
-                GC.Collect();
-            }
+            return abm;
         }
     }
 }

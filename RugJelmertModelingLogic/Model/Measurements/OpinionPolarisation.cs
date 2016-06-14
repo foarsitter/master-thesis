@@ -9,30 +9,31 @@ namespace RugJelmertModelingLogic.Model.Measurements
 {
     public class OpinionPolarisation : IMeasurement
     {
-        private List<double> polarization = new List<double>();
-        public double calculate(Agent[] agents)
+        public int sample = 0;
+        public Agent[] selection;
+        public List<double> polarization = new List<double>();
+
+        public OpinionPolarisation(Agent[] selection)
         {
-            int sample;
-            Agent[] selection;
+            this.sample = selection.Count();
 
-            if (agents.Count() < 200)
+            if (selection.Length > 200)
             {
-                sample = agents.Count();
-                selection = agents.ToArray();
-            }
-            else
-            {
-                sample = agents.Count() / 100;
-                selection = agents.OrderBy(item => new Random().Next()).ToArray();
+                this.sample = 200;
             }
 
+            this.selection = selection.ToArray();                
+        }
+
+        public void calculate()
+        {
             double sum = 0;
 
             double average_d = 0;
 
-            for (int i = 0; i < sample; i++)
+            for (int i = 0; i < this.sample; i++)
             {
-                for (int j = 0; j < sample; j++)
+                for (int j = 0; j < this.sample; j++)
                 {
                     if (i != j)
                     {
@@ -41,39 +42,26 @@ namespace RugJelmertModelingLogic.Model.Measurements
                 }
             }
 
-            average_d = sum / (sample * sample);
+            average_d = sum / (this.sample * this.sample);
 
             double variation_d = 0;
 
-            for (int i = 0; i < sample; i++)
+            for (int i = 0; i < this.sample; i++)
             {
-                for (int j = 0; j < sample; j++)
+                for (int j = 0; j < this.sample; j++)
                 {
                     if (i != j)
                     {
-                        variation_d += Math.Pow(selection[i].flexibleDistance(selection[j]) - average_d, 2);
+                        variation_d += Math.Pow(this.selection[i].flexibleDistance(selection[j]) - average_d, 2);
                     }
                 }
             }
-            double dsample = (double)sample;
+            double dsample = (double)this.sample;
             double pdiv = (1.0 / (dsample * (dsample - 1.0)));
 
             double polar = pdiv * variation_d;
 
-            this.polarization.Add(polar);
-
-            return polar;
-            
-        }
-
-        public List<double> getResult()
-        {
-            return this.polarization;
-        }
-
-        public double getItem(int index)
-        {
-            return this.polarization[index];
+            this.polarization.Add(polar);                        
         }
     }
 }

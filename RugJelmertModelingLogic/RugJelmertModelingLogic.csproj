@@ -29,6 +29,12 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>Jelmert.pfx</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -40,6 +46,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ABMInitializer.cs" />
+    <Compile Include="CSVParserV2.cs" />
     <Compile Include="Grid\Agent.cs" />
     <Compile Include="Grid\Grid.cs" />
     <Compile Include="Grid\GridColumn.cs" />
@@ -48,12 +56,17 @@
     <Compile Include="Interaction\MooreNeighborhood.cs" />
     <Compile Include="Interaction\NeumannNeighborhood.cs" />
     <Compile Include="Interaction\SimpleInteraction.cs" />
+    <Compile Include="Model\Measurements\CellAVGDistance.cs" />
+    <Compile Include="Model\Measurements\ExtremeCount.cs" />
     <Compile Include="Model\Measurements\IMeasurement.cs" />
     <Compile Include="Model\Measurements\OpinionDiversity.cs" />
     <Compile Include="Model\AgentBasedModel.cs" />
     <Compile Include="Model\Measurements\OpinionMeanAndVariance.cs" />
     <Compile Include="Model\Measurements\OpinionPolarisation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Jelmert.pfx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

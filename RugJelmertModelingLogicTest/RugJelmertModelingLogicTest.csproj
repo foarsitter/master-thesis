@@ -60,8 +60,8 @@
     <Compile Include="TestOpinionPolarisation.cs" />
     <Compile Include="TestOpinionDiversity.cs" />
     <Compile Include="TestOpinionMean.cs" />
-    <Compile Include="UnitTest1.cs" />
-    <Compile Include="UnitTest2.cs" />
+    <Compile Include="SumUnitTestVoorbeeld.cs" />
+    <Compile Include="NeumannTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RugJelmertModelingCLI\RugJelmertModelingCLI.csproj">

@@ -20,9 +20,20 @@ namespace RugJelmertModelingLogic
             }
         }
 
+        public int Count()
+        {
+            return this.colums.Length;
+        }
+
         public GridColumn get(int column)
         {
             return this.colums[column];
         }
+
+        public GridColumn[] getColumns()
+        {
+            return this.colums;
+        }
+      
     }
 }

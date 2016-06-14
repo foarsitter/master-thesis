@@ -2,6 +2,7 @@
 using RugJelmertModelingLogic.Model;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 
 namespace RugJelmertModelingCLI
@@ -19,16 +20,16 @@ namespace RugJelmertModelingCLI
             this.abm = abm;
         }
 
-        public void parse(string filename)
+        public void parse(string contents)
         {
             List<string> list = new List<string>();
 
-            using (StreamReader reader = new StreamReader(filename))
+            using (StringReader reader = new StringReader(contents))
             {
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    if(!line.StartsWith("x"))
+                    if (!line.StartsWith("x"))
                     {
                         List<Agent> agents = this.AgentsFromString(line);
 
@@ -37,16 +38,15 @@ namespace RugJelmertModelingCLI
                             abm.addAgent(a);
                         }
                     }
-                        
                 }
             }
         }
 
-        int rows = 0;
-        int colums = 0;
-        int cells = 0;
-        int agents = 0;     
-        int immigrants = 0;
+        public int rows = 0;
+        public int colums = 0;
+        public int cells = 0;
+        public int agents = 0;     
+        public int immigrants = 0;
 
         /// <summary>
         /// Initialize the agents for this input string
@@ -60,11 +60,10 @@ namespace RugJelmertModelingCLI
 
             int x = int.Parse(row[0]);
             int y = int.Parse(row[1]);
-
             //the replacing is necessary when the comma is used as decimal separator 
-            double immigrants = double.Parse(row[2].Replace(',', '.'));
-            double addresses = double.Parse(row[3].Replace(',', '.'));
-            double households = double.Parse(row[4].Replace(',', '.'));
+            double immigrants = double.Parse(row[2], CultureInfo.InvariantCulture);
+            double addresses = double.Parse(row[3], CultureInfo.InvariantCulture);
+            double households = double.Parse(row[4], CultureInfo.InvariantCulture);
 
             //addresses is per km2 and immigrants as percentage 
             addresses = addresses / 1000;

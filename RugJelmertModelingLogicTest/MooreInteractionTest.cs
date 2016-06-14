@@ -8,9 +8,11 @@ namespace RugJelmertModelingLogicTest
     public class MooreInteractionTest
     {
         [TestMethod]
-        public void TestMethod1()
+        public void TestMooreSquare()
         {
             MooreNeighborhood m = new MooreNeighborhood();
+
+            throw new NotImplementedException();
         }
     }
 }

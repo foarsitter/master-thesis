@@ -11,12 +11,9 @@ namespace RugJelmertModelingLogic
     /// The most important object: the network agent! 
     /// </summary>
     public class Agent
-    { 
-        /// <summary>
-        /// All the agents in the network.
-        /// </summary>
-        public static int agentCount = 0;
-
+    {
+        public static readonly int IMMIGRANT = -1;
+        public static readonly int LOCAL = 1;
         /// <summary>
         /// The amount of flexible attributes
         /// </summary>
@@ -74,10 +71,15 @@ namespace RugJelmertModelingLogic
         /// <param name="fix">The fixed attributes</param>
         public Agent(double[] flexible, double[] fix)
         {
-            this.Flex = flexible;
-            this.Fix = fix;
+            this.Flex = new double[flexible.Length];
 
-            Agent.agentCount++;
+            for (int i = 0; i < flexible.Length; i++)
+            {
+                this.adjust_opinion(i, flexible[i]);
+            }
+
+            this.Flex = flexible;
+            this.Fix = fix;            
         }
 
         /// <summary>
@@ -112,14 +114,19 @@ namespace RugJelmertModelingLogic
         /// </summary>
         /// <param name="index">The position (index) of the flexible attribute to be altered</param>
         /// <param name="opinion">The new value for this attribute</param>
-        public void adjust_opinion(int index, double opinion)
+        public double adjust_opinion(int index, double opinion)
         {
+            double old_opinion = this.Flex[index];
+
             if (opinion < -1)
                 this.Flex[index] = -1;
             else if (opinion > 1)
                 this.Flex[index] = 1;
             else
                 this.Flex[index] = opinion;
+
+
+            return this.Flex[index];            
         }
 
         /// <summary>

@@ -7,8 +7,9 @@ namespace RugJelmertModelingLogicTest
     public class TestOpinionMean
     {
         [TestMethod]
-        public void TestMethod1()
+        public void OpinionMeanTest()
         {
+            throw new NotImplementedException();
         }
     }
 }

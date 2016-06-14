@@ -12,6 +12,7 @@ namespace RugJelmertModelingLogicTest
         [TestMethod]
         public void TestDifferent()
         {
+
             AgentBasedModel model = new AgentBasedModel();
             model.grid.initEmpty(10, 10);
             double[] o_i = { 0.1 };
@@ -22,9 +23,9 @@ namespace RugJelmertModelingLogicTest
             model.addAgent(i);
             model.addAgent(j);
 
-            OpinionDiversity div = new OpinionDiversity();
-
-            double res = div.calculate(model.Agents.ToArray());
+            OpinionDiversity div = new OpinionDiversity(model.Agents.ToArray());
+            div.calculate();
+            double res = div.diversityTotal[0];
             //2 agent with 2 different opinions, one each. 2/(2*1)=1
             Assert.AreEqual(res,1);
         }
@@ -42,9 +43,9 @@ namespace RugJelmertModelingLogicTest
             model.addAgent(i);
             model.addAgent(j);
 
-            OpinionDiversity div = new OpinionDiversity();
-
-            double res = div.calculate(model.Agents.ToArray());
+            OpinionDiversity div = new OpinionDiversity(model.Agents.ToArray());
+            div.calculate();
+            double res = div.diversityTotal[0];
             //2 agent with same opinion, one each. 1/(2*1)=0.5
             Assert.AreEqual(res, 0.5);
         }
@@ -65,9 +66,9 @@ namespace RugJelmertModelingLogicTest
                 model.addAgent(a);
             }
 
-            OpinionDiversity div = new OpinionDiversity();
-
-            double res = div.calculate(model.Agents.ToArray());
+            OpinionDiversity div = new OpinionDiversity(model.Agents.ToArray());
+            div.calculate();
+            double res = div.diversityTotal[0];
 
             //100 agent with different opinions, one each. 100/(100*1)=1
             Assert.AreEqual(res, 1);
@@ -89,9 +90,9 @@ namespace RugJelmertModelingLogicTest
                 model.addAgent(a);
             }
 
-            OpinionDiversity div = new OpinionDiversity();
-
-            double res = div.calculate(model.Agents.ToArray());
+            OpinionDiversity div = new OpinionDiversity(model.Agents.ToArray());
+            div.calculate();
+            double res = div.diversityTotal[0];
 
             //25 agent with different opinions, 4 each. 100/(25*4)=1
             Assert.AreEqual(res, 1);
@@ -113,9 +114,9 @@ namespace RugJelmertModelingLogicTest
                 model.addAgent(a);
             }
 
-            OpinionDiversity div = new OpinionDiversity();
-
-            double res = div.calculate(model.Agents.ToArray());
+            OpinionDiversity div = new OpinionDiversity(model.Agents.ToArray());
+            div.calculate();
+            double res = div.diversityTotal[0];
 
             //25 agent with same opinions, 4 each. 1/(25*4)=1
             Assert.AreEqual(res, 0.01);
