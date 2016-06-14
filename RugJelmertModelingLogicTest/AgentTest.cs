@@ -13,17 +13,7 @@ namespace RugJelmertModelingLogicTest
     /// </summary>
     [TestClass]
     public class AgentTest
-    {
-        [TestMethod]
-        public void TestAgentCounter()
-        {
-            Agent a1 = new Agent(null, new double[] { 1.0 });
-            Agent a2 = new Agent(null, new double[] { 1.0 });
-            Agent a3 = new Agent(null, new double[] { 1.0 });
-
-            Assert.AreEqual(3, Agent.agentCount, 0.001, "Agent counters does not add up.");
-        }
-        
+    {        
         [TestMethod]
         public void TestAgentWeigthExtreme()
         {
@@ -31,6 +21,17 @@ namespace RugJelmertModelingLogicTest
             double[] o_j = { -1, -1, -1, -1 };
             Agent i = new Agent(o_i, new double[] { 1.0 });
             Agent j = new Agent(o_j, new double[] { -1.0 });
+
+            double weight = i.weigth(j);
+
+            Assert.AreEqual(-1, weight, "The weight calculation isn't correct");
+        }
+
+        [TestMethod]
+        public void TestAgentWeigth()
+        {
+            Agent i = new Agent(new double[] { -1 }, new double[] { -1.0 });
+            Agent j = new Agent(new double[] { 1 }, new double[] { 1.0 });
 
             double weight = i.weigth(j);
 
@@ -82,8 +83,26 @@ namespace RugJelmertModelingLogicTest
 
             int df = results.Count - 1;
 
-            Assert.IsTrue(x2 < 20, "Not very significant... xi = " + x2);
+            Assert.IsTrue(x2 < 25, "Not very significant... xi = " + x2);
         }
 
+
+        [TestMethod]
+        public void TestRandomGeneratedFlexibleAttribute()
+        {
+            AgentBasedModel abm = new AgentBasedModel();
+
+            Agent.numFlex = 1;
+            Assert.AreEqual(1, Agent.randomFlexible(abm).Length, "Expected length doesn't match");
+
+            Agent.numFlex = 2;
+            Assert.AreEqual(2, Agent.randomFlexible(abm).Length, "Expected length doesn't match");
+
+            Agent.numFlex = 3;
+            Assert.AreEqual(3, Agent.randomFlexible(abm).Length, "Expected length doesn't match");
+
+            Agent.numFlex = 40;
+            Assert.AreEqual(40, Agent.randomFlexible(abm).Length, "Expected length doesn't match");
+        }
     }
 }

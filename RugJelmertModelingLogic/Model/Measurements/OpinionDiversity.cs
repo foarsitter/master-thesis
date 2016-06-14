@@ -10,34 +10,56 @@ namespace RugJelmertModelingLogic.Model.Measurements
 {
     public class OpinionDiversity : IMeasurement
     {
-        private List<double> diversity = new List<double>();
-        public double calculate(Agent[] agents)
-        {
-            HashSet<double> unique_opinions = new HashSet<double>();
 
-            foreach (var agent in agents)
+        public List<double> diversityTotal = new List<double>();
+        public List<double> diversityLocals = new List<double>();
+        public List<double> diversityImmigrants = new List<double>();
+
+
+        Agent[] agents;
+        public OpinionDiversity(Agent[] agents)
+        {
+            this.agents = agents;
+        }
+
+        public void calculate()
+        {
+            HashSet<double> uniqueTotal = new HashSet<double>();
+            HashSet<double> uniqueLocals = new HashSet<double>();
+            HashSet<double> uniqueImmigrants = new HashSet<double>();
+
+            int localCount = 0;
+            int immigrantCount = 0;
+
+            foreach (var agent in this.agents)
             {
-                for (int k = 0; k < Agent.numFlex; k++)
+                double opinion = Math.Round(agent.flex(0), 3);
+
+                uniqueTotal.Add(opinion);
+
+                if (agent.fix(0) == AgentBasedModel.AGENT_IMMIGRANT)
                 {
-                    unique_opinions.Add(Math.Round(agent.flex(k), 5));
+                    uniqueImmigrants.Add(opinion);
+                    immigrantCount++;
                 }
+                else
+                {
+                    localCount++;
+                    uniqueLocals.Add(opinion);
+                }
+
+
             }
 
-            double diversity = (double)unique_opinions.Count() / ((double)agents.Length * (double)Agent.numFlex);
+            double diversityTotal = (double)uniqueTotal.Count() / (double)this.agents.Length;
+            double diversityLocals = (double)uniqueLocals.Count() / (double)localCount; ;
+            double diversityImmigrants = (double)uniqueImmigrants.Count() / (double)immigrantCount; ;
 
-            this.diversity.Add(diversity);
+            this.diversityTotal.Add(diversityTotal);
+            this.diversityLocals.Add(diversityLocals);
+            this.diversityImmigrants.Add(diversityImmigrants);
 
-            return diversity;
         }
 
-        public double getItem(int index)
-        {
-            return this.diversity[index];
-        }
-
-        public List<Double> getResult()
-        {
-            return this.diversity;
-        }
     }
 }

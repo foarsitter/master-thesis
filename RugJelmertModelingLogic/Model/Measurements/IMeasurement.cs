@@ -9,9 +9,7 @@ namespace RugJelmertModelingLogic.Model.Measurements
 {
     public interface IMeasurement
     {
-        List<double> getResult();
-        double calculate(Agent[] agents);
+        void calculate();
 
-        double getItem(int index);
     }
 }

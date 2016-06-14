@@ -9,55 +9,134 @@ namespace RugJelmertModelingLogic.Model.Measurements
 {
     public class OpinionMeanAndVariance : IMeasurement
     {
-        private List<double> mean = new List<double>();
-        private List<double> variance = new List<double>();
+        public List<double> meanAll = new List<double>();
+        public List<double> meanLocals = new List<double>();
+        public List<double> meanImmigrants = new List<double>();
 
-        public double calculate(Agent[] agents)
+        public List<double> varianceAll = new List<double>();
+        public List<double> varianceLocals = new List<double>();
+        public List<double> varianceImmigrants = new List<double>();
+
+
+        public List<double> meanAllAbs = new List<double>();
+        public List<double> meanLocalsAbs = new List<double>();
+        public List<double> meanImmigrantsAbs = new List<double>();
+
+        public List<double> varianceAllAbs = new List<double>();
+        public List<double> varianceLocalsAbs = new List<double>();
+        public List<double> varianceImmigrantsAbs = new List<double>();
+
+        public List<double> rpbi = new List<double>();
+        public List<double> absPpbi = new List<double>();
+               
+
+        Agent[] agents;
+
+        public OpinionMeanAndVariance(Agent[] agents)
         {
-            double opinion_mean_sum = 0;
+            this.agents = agents;
+        }
 
-            foreach (Agent agent in agents)
+        public void calculate()
+        {
+            double opinionMeanTotalSum = 0;
+            double opinionMeanLocalsSum = 0;
+            double opinionMeanImmigrantsSum = 0;
+
+            double absOpinionMeanTotalSum = 0;
+            double absOpinionMeanLocalsSum = 0;
+            double absOpinionMeanImmigrantsSum = 0;
+
+            int countLocals = 0;
+            int countImmigrants = 0;
+
+            foreach (Agent agent in this.agents)
             {
-                for (int k = 0; k < Agent.numFlex; k++)
+                int k = 0;
+
+                opinionMeanTotalSum += agent.flex(k);
+                absOpinionMeanTotalSum += Math.Abs(agent.flex(k));
+
+                if (agent.fix(0) == 1)
                 {
-                    opinion_mean_sum += agent.flex(k);
+                    opinionMeanLocalsSum += agent.flex(k);
+                    absOpinionMeanLocalsSum += Math.Abs(agent.flex(k));
+                    countLocals++;
+                }
+                else
+                {
+                    opinionMeanImmigrantsSum += agent.flex(k);
+                    absOpinionMeanImmigrantsSum += Math.Abs(agent.flex(k));
+                    countImmigrants++;
                 }
             }
 
-            double opinion_mean = (double)opinion_mean_sum / (double)(agents.Count() * Agent.numFlex);
+            double opinionMeanAll = (double)opinionMeanTotalSum / (double)(this.agents.Length * Agent.numFlex);
+            double opinionMeanLocals = (double)opinionMeanLocalsSum / (double)(countLocals * Agent.numFlex);
+            double opinionMeanImmigrants = (double)opinionMeanImmigrantsSum / (double)(countImmigrants * Agent.numFlex);
 
-            double opinion_variance_sum = 0;
+            double opinionMeanAllAbs = (double)absOpinionMeanTotalSum / (double)(this.agents.Length * Agent.numFlex);
+            double opinionMeanLocalsAbs = (double)absOpinionMeanLocalsSum / (double)(countLocals * Agent.numFlex);
+            double opinionMeanImmigrantsAbs = (double)absOpinionMeanImmigrantsSum / (double)(countImmigrants * Agent.numFlex);
 
-            foreach (Agent agent in agents)
+            double sumOpinionVarianceAll = 0;
+            double sumOpinionVarianceLocals = 0;
+            double sumOpinionVarianceImmigrants = 0;
+
+            double opinionVarianceSumAllAbs = 0;
+            double opinionVarianceSumLocalsAbs = 0;
+            double opinionVarianceSumImmigrantsAbs = 0;
+
+            foreach (Agent agent in this.agents)
             {
-                for (int k = 0; k < Agent.numFlex; k++)
+                sumOpinionVarianceAll += Math.Pow(agent.flex(0) - opinionMeanAll, 2);
+                opinionVarianceSumAllAbs += Math.Pow(Math.Abs(agent.flex(0)) - opinionMeanAllAbs, 2);
+
+                if (agent.fix(0) == 1)
                 {
-                    opinion_variance_sum += Math.Pow(agent.flex(k) - opinion_mean, 2);
-                }
+                    sumOpinionVarianceLocals += Math.Pow(agent.flex(0) - opinionMeanLocals, 2);
+                    opinionVarianceSumLocalsAbs += Math.Pow(Math.Abs(agent.flex(0)) - opinionMeanLocalsAbs, 2);
+                }                    
+                else
+                {
+                    sumOpinionVarianceImmigrants += Math.Pow(agent.flex(0) - opinionMeanImmigrants, 2);
+                    opinionVarianceSumImmigrantsAbs += Math.Pow(Math.Abs(agent.flex(0)) - opinionMeanImmigrantsAbs, 2);
+                }                    
+
             }
 
-            double opinion_variance = 1 / (double)(agents.Count() * Agent.numFlex - 1) * opinion_variance_sum;
+            double opinionVarianceAll = 1 / (double)(this.agents.Length * Agent.numFlex - 1) * sumOpinionVarianceAll;
+            double opinionVarianceLocals = 1 / (double)(countLocals * Agent.numFlex - 1) * sumOpinionVarianceLocals;
+            double opinionVarianceImmigrants = 1 / (double)(countImmigrants * Agent.numFlex - 1) * sumOpinionVarianceImmigrants;
 
-            this.mean.Add(opinion_mean);
-            this.variance.Add(opinion_variance);
+            double opinionVarianceAllAbs = 1 / (double)(this.agents.Length * Agent.numFlex - 1) * opinionVarianceSumAllAbs;
+            double opinionVarianceLocalsAbs = 1 / (double)(countLocals * Agent.numFlex - 1) * opinionVarianceSumLocalsAbs;
+            double opinionVarianceImmigrantsAbs = 1 / (double)(countImmigrants * Agent.numFlex - 1) * opinionVarianceSumImmigrantsAbs;
 
-            return opinion_mean;
-        }
+            this.meanAll.Add(opinionMeanAll);
+            this.meanLocals.Add(opinionMeanLocals);
+            this.meanImmigrants.Add(opinionMeanImmigrants);
 
-        public List<double> getResult()
-        {
-            return mean;
-        }
+            this.varianceAll.Add(opinionVarianceAll);
+            this.varianceLocals.Add(opinionVarianceLocals);
+            this.varianceImmigrants.Add(opinionVarianceImmigrants);
 
+            this.meanAllAbs.Add(opinionMeanAllAbs);
+            this.meanLocalsAbs.Add(opinionMeanLocalsAbs);
+            this.meanImmigrantsAbs.Add(opinionMeanImmigrantsAbs);
 
-        public double getItem(int index)
-        {
-            return this.mean[index];
-        }
+            this.varianceAllAbs.Add(opinionVarianceAllAbs);
+            this.varianceLocalsAbs.Add(opinionVarianceLocalsAbs);
+            this.varianceImmigrantsAbs.Add(opinionVarianceImmigrantsAbs);
 
-        public List<double> getVariance()
-        {
-            return variance;
+            double p = (double)countLocals / (double)this.agents.Length;
+            double q = (double)countImmigrants / (double)this.agents.Length;
+
+            double pq = Math.Sqrt(p * q);
+
+            this.rpbi.Add((opinionMeanLocals - opinionMeanImmigrants) / Math.Sqrt(opinionVarianceAll) * pq);
+            this.absPpbi.Add((opinionMeanLocalsAbs - opinionMeanImmigrantsAbs) / Math.Sqrt(opinionVarianceAllAbs) * pq);
+
         }
     }
 }

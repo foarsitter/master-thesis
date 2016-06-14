@@ -37,9 +37,12 @@ namespace RugJelmertModelingLogicTest
             CSVParser p = new CSVParser(abm);
 
             // x;y;immigrants;addresses;households
-            p.parse("assets/flat_town.csv");                
+            p.parse("assets/flat_town.csv");
 
-            Assert.AreEqual(Agent.agentCount, 100);
+            Assert.AreEqual(p.agents, 100);
+            Assert.AreEqual(p.immigrants, 0);
+            // the agentCount is a static. If there are more test exectuted the amount will be higher. 
+            //Assert.AreEqual(Agent.agentCount, 100);
         }
     }
 }

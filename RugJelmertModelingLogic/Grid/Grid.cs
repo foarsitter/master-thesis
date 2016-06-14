@@ -11,11 +11,22 @@ namespace RugJelmertModelingLogic
     /// </summary>
     public class Grid
     {
+        public int nRows = 0;
+        public int nCol = 0; 
+
         private GridRow[] rows;
+
+        public GridRow[] getRows()
+        {
+            return this.rows;
+        }
 
         public void initEmpty(int rows, int columns)
         {
             this.rows = new GridRow[rows];
+
+            this.nRows = rows;
+            this.nCol = columns;
 
             for (int i = 0; i < rows; i++)
             {
@@ -69,14 +80,51 @@ namespace RugJelmertModelingLogic
         /// <param name="row"></param>
         /// <param name="colum"></param>
         /// <returns></returns>
-        public Agent[] get(int row, int colum)
+        public Agent[] get(int row, int column)
         {
-            return this.rows[row].get(colum).getAgents();
+            return this.rows[row].get(column).getAgents();
+        }
+
+        public GridColumn getColumn(int row, int column)
+        {
+            return this.rows[row].get(column);
         }
 
         public int countRows()
         {
             return this.rows.Count();
+        }
+
+        public string Serialize()
+        {
+            return this.Serialize(false);
+        }
+
+        public String Serialize(bool round)
+        {
+            StringBuilder gridString = new StringBuilder();
+
+            for (int x = 0; x < this.nRows; x++)
+            {
+                for (int y = 0;y  < this.rows[x].Count(); y++)
+                {
+                    for (int z = 0; z < this.rows[x].get(y).getAgents().Length; z++)
+                    {
+                        Agent cur = this.rows[x].get(y).getAgent(z);
+
+                        string opinion;
+
+                        if (round)
+                            opinion = Math.Round(cur.flex(0) * 100).ToString();
+                        else
+                            opinion = cur.flex(0).ToString();
+
+                        gridString.AppendLine(string.Format("{0};{1};{2};{3};{4}",x,y,z,(int)cur.fix(0),opinion)); 
+                    }
+                }
+            }
+
+            return gridString.ToString();
         }
     }
 }
